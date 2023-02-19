@@ -7,8 +7,12 @@ edition = "2018"
 description = "Platform agnostic driver for mpu6886 6-axis IMU"
 repository = "https://github.com/oldsheep68/mpu6886"
 readme = "README.md"
-keywords = ["mpu6886", "imu", "embedded"]
+keywords = ["mpu6886", "imu", "embedded", "driver", "accelerometer", "gyroscope"]
 license = "MIT"
+
+exclude = [
+    "target/*",
+]
 
 [dependencies]
 embedded-hal = "0.2.4"
