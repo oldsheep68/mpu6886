@@ -1,7 +1,7 @@
 [package]
 name = "mpu6886"
 version = "0.1.0"
-authors = ["oldsheep68"]
+authors = ["oldsheep68@hotmail.com"]
 edition = "2018"
 
 description = "Platform agnostic driver for mpu6886 6-axis IMU"
