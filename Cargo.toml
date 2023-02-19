@@ -1,11 +1,11 @@
 [package]
 name = "mpu6886"
 version = "0.1.0"
-authors = ["Julian Gaal <gjulian@uos.de>"]
+authors = ["oldsheep68"]
 edition = "2018"
 
 description = "Platform agnostic driver for mpu6886 6-axis IMU"
-repository = "https://github.com/juliangaal/mpu6886"
+repository = "https://github.com/oldsheep68/mpu6886"
 readme = "README.md"
 keywords = ["mpu6886", "imu", "embedded"]
 license = "MIT"
