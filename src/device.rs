@@ -75,7 +75,25 @@ pub struct CONFIG;
 impl CONFIG {
     /// Base Address
     pub const ADDR: u8 = 0x1a;
+    /// FIFO_MODE 
+    /// When set to ‘1’, when the FIFO is full, additional writes will not be written to FIFO.
+    /// When set to ‘0’, when the FIFO is full, additional writes will be written to the FIFO, replacing
+    /// the oldest data.
+    pub const FIFO_MODE : u8 = 6;
     /// external Frame Synchronisation (FSYNC)
+    /// Enables the FSYNC pin data to be sampled.
+    /// EXT_SYNC_SET FSYNC BIT LOCATION
+    /// 0 function disabled
+    /// 1 TEMP_OUT_L[0]
+    /// 2 GYRO_XOUT_L[0]
+    /// 3 GYRO_YOUT_L[0]
+    /// 4 GYRO_ZOUT_L[0]
+    /// 5 ACCEL_XOUT_L[0]
+    /// 6 ACCEL_YOUT_L[0]
+    /// 7 ACCEL_ZOUT_L[0]
+    /// FSYNC will be latched to capture short strobes. This will be done such that if FSYNC toggles,
+    /// the latched value toggles, but won’t toggle again until the new latched value is captured by
+    /// the sample rate strobe.
     pub const EXT_SYNC_SET: BitBlock = BitBlock { bit: 5, length: 3};
     /// Digital Low Pass Filter (DLPF) config
     pub const DLPF_CFG: BitBlock = BitBlock { bit: 2, length: 3};
@@ -95,7 +113,31 @@ impl GYRO_CONFIG {
     /// Gyro z axis self test bit
     pub const ZG_ST: u8 = 5;
     /// Gyro Config FS_SEL
+    /// Gyro Full Scale Select:
+    /// 00 = ±250 dps.
+    /// 01= ±500 dps.
+    /// 10 = ±1000 dps.
+    /// 11 = ±2000 dps
     pub const FS_SEL: BitBlock = BitBlock { bit: 4, length: 2 };
+    /// Used to bypass DLPF as shown in Table 16 in datasheet.
+    /// The DLPF is configured by DLPF_CFG, when FCHOICE_B [1:0] = 2b’00. The gyroscope and temperature sensor are
+    ///filtered according to the value of DLPF_CFG and FCHOICE_B as shown in the table below.
+    /// 
+    ///                      | GYROSCOPE                | TEMPERATURE SENSOR
+    /// FCHOICE_B  DLPF_CFG  3-DB BW  NOISE BW    RATE
+    /// <1><0>               (HZ)     (HZ)        (KHZ)    3-DB BW (HZ)
+    /// X 1          X        8173     8595.1       32        4000
+    /// 1 0          X        3281     3451.0       32        4000
+    /// 0 0          0         250      306.6        8        4000
+    /// 0 0          1         176      177.0        1         188
+    /// 0 0          2          92      108.6        1          98
+    /// 0 0          3          41       59.0        1          42
+    /// 0 0          4          20       30.5        1          20
+    /// 0 0          5          10       15.6        1          10
+    /// 0 0          6           5        8.0        1           5
+    /// 0 0          7        3281     3451.0        8        4000
+    /// Table 16. Configuration
+    pub const FCHOICE_B: BitBlock = BitBlock { bit: 1, length: 2 };
 }
 
 #[allow(non_camel_case_types)]
@@ -113,9 +155,9 @@ impl ACCEL_CONFIG {
     /// Accel z axis self test bit
     pub const ZA_ST: u8 = 5;
     /// Accel Config FS_SEL
+    /// Accel full scale select:
+    /// :±2g (00), ±4g (01), ±8g (10), ±16g (11
     pub const FS_SEL: BitBlock = BitBlock { bit: 4, length: 2};
-    /// Accel Config ACCEL_HPF
-    pub const ACCEL_HPF: BitBlock = BitBlock { bit: 2, length: 3};
 }
 
 #[allow(non_camel_case_types)]
@@ -127,21 +169,30 @@ impl INT_PIN_CFG {
     /// Base Address
     pub const ADDR: u8 = 0x37;
     /// INT pin logic level
+    /// 1 – The logic level for INT/DRDY pin is active low.
+    /// 0 – The logic level for INT/DRDY pin is active high.
     pub const INT_LEVEL: u8 = 7;
     /// INT pin config
+    /// 1 – INT/DRDY pin is configured as open drain
+    /// 0 – INT/DRDY pin is configured as push-pull.
     pub const INT_OPEN: u8 = 6;
     /// Pulse (length)
+    /// 1 – INT/DRDY pin level held until interrupt status is cleared.
+    /// 0 – INT/DRDY pin indicates interrupt pulse’s width is 50 μs.
     pub const LATCH_INT_EN: u8 = 5;
     /// INT clear conditions
+    /// 1 – Interrupt status is cleared if any read operation is performed.
+    /// 0 – Interrupt status is cleared only by reading INT_STATUS register
     pub const INT_RD_CLEAR: u8 = 4;
     /// FSYNC PIN logic level
+    /// 1 – The logic level for the FSYNC pin as an interupt is active low.
+    ///  – The logic level for the FSYNC pin as an interrupt is active high.
     pub const FSYNC_INT_LEVEL: u8 = 3;
     /// FSYNC PIN config
+    /// When this bit is equal to 1, the FSYNC pin will trigger an interrupt when it transitions to
+    /// the level specified by FSYNC_INT_LEVEL. When this bit is equal to 0, the FSYNC pin is
+    /// disabled from causing an interrupt
     pub const FSYNC_INT_EN: u8 = 2;
-    /// i2c access/bypass
-    pub const I2C_BYPASS_EN: u8 = 1;
-    /// enable/disable reference clock output
-    pub const CLKOUT_EN: u8 = 0;
 }
 
 #[allow(non_camel_case_types)]
@@ -152,16 +203,18 @@ pub struct INT_ENABLE;
 impl INT_ENABLE {
     /// Base Address
     pub const ADDR: u8 = 0x38;
-    /// Generate interrupt Free Fall Detection
-    pub const FF_EN: u8 = 7;
-    /// Generate interrupt with Motion Detected
-    pub const MOT_EN: u8 = 6;
-    /// Generate iterrrupt when Zero Motion Detection
-    pub const ZMOT_EN: u8 = 5;
+    /// 1 – Enable WoM interrupt on X-axis accelerometer. Default setting is 0
+    pub const WOM_X_INT_EN: u8 = 7;
+    /// 1 – Enable WoM interrupt on Y-axis accelerometer. Default setting is 0
+    pub const WOM_Y_INT_EN: u8 = 6;
+    /// 1 – Enable WoM interrupt on Z-axis accelerometer. Default setting is 0
+    pub const WOM_Z_INT_EN: u8 = 5;
     /// Generate iterrupt when FIFO buffer overflow
+    /// 0 : disabled
+    /// 1: FIFO overflow generates an interrupt
     pub const FIFO_OFLOW_END: u8 = 4;
-    /// this  bit enables  any  of  the  I2C  Masterinterrupt  sources  to generate an interrupt
-    pub const I2C_MST_INT_EN: u8 = 3;
+    /// Gyroscope Drive System Ready interrupt enable
+    pub const GDRIVE_INT_EN: u8 = 2;
     /// enables Data Ready interrupt, each time a write operation to all sensor registers completed
     pub const DATA_RDY_EN: u8 = 0;
 }
@@ -189,45 +242,7 @@ impl INT_STATUS {
     pub const DATA_RDY_INT: u8 = 0;
 }
 
-#[allow(non_camel_case_types)]
-#[derive(Copy, Clone, Debug)]
-/// Register 97: Motion Detection Status
-pub struct MOT_DETECT_STATUS;
 
-impl MOT_DETECT_STATUS {
-    /// Base Address
-    pub const ADDR: u8 = 0x61;
-    /// motion  in  the  negative  X  axis  has generated a Motion detection interrupt
-    pub const MOT_XNEG: u8 = 7;
-    /// motion  in  the  positive  X  axis  has generated a Motion detection interrupt
-    pub const MOT_XPOS: u8 = 6;
-    /// motion  in  the  negative  Y  axis  has generated a Motion detection interrupt
-    pub const MOT_YNEG: u8 = 5;
-    /// motion  in  the positive  Y  axis  has generated a Motion detection interrupt
-    pub const MOT_YPOS: u8 = 4;
-    /// motion  in  the  negative  Z  axis  has generated a Motion detection interrupt.
-    pub const MOT_ZNEG: u8 = 3;
-    /// motion  in  the  positive  Z  axis  has generated a Motion detection interrupt
-    pub const MOT_ZPOS: u8 = 2;
-    /// Zero  Motion detection  interrupt  is generated
-    pub const MOT_ZRMOT: u8 = 0;
-}
-
-#[allow(non_camel_case_types)]
-#[derive(Copy, Clone, Debug)]
-/// Register 105: Motion Detection Control
-pub struct MOT_DETECT_CONTROL;
-
-impl MOT_DETECT_CONTROL {
-    /// Base Address
-    pub const ADDR: u8 = 0x69;
-    /// Additional delay
-    pub const ACCEL_ON_DELAY: BitBlock = BitBlock { bit: 5, length: 2};
-    ///  Free Fall count
-    pub const FF_COUNT: BitBlock = BitBlock { bit: 3, length: 2};
-    /// Motion Detection cound
-    pub const MOT_COUNT: BitBlock = BitBlock { bit: 1, length: 2};
-}
 
 #[allow(non_camel_case_types)]
 #[derive(Copy, Clone, Debug)]
@@ -241,11 +256,18 @@ impl PWR_MGMT_1 {
     pub const DEVICE_RESET: u8 = 7;
     /// Sleep mode bit (Should be called "Low Power", doesn't actually sleep)
     pub const SLEEP: u8 = 6;
-    /// Cycle bit for wake operations
+    /// When set to 1, and SLEEP and STANDBY are not set to 1, the chip will cycle between sleep
+    /// and taking a single accelerometer sample at a rate determined by SMPLRT_DIV
     pub const CYCLE: u8 = 5;
-    /// Temperature sensor enable/disable bit
+    /// Gyro standby
+    pub const GYRO_STANDBY: u8 = 4;
+    /// When set to 1, this bit disables the temperature sensor
     pub const TEMP_DIS: u8 = 3;
     /// Clock Control
+    /// 0 Internal 20 MHz oscillator
+    /// 1 to t5 all are: Auto selects the best available clock source – PLL if ready, else use the Internal oscillator
+    /// 6 Internal 20 MHz oscillator
+    /// 7 stop clock
     pub const CLKSEL: BitBlock = BitBlock { bit: 2, length: 3 };
 }
 
@@ -257,8 +279,7 @@ pub struct PWR_MGMT_2;
 impl PWR_MGMT_2 {
     /// Base Address
     pub const ADDR: u8 = 0x6c;
-    /// Wake up frequency
-    pub const LP_WAKE_CTRL: BitBlock = BitBlock { bit: 7, length: 2};
+    
     /// disable accel axis x
     pub const STBY_XA: u8 = 5;
     /// disable accel axis y
@@ -273,53 +294,53 @@ impl PWR_MGMT_2 {
     pub const STBY_ZG: u8 = 0;
 }
 
-#[allow(non_camel_case_types)]
-#[derive(Copy, Clone, Debug, Eq, PartialEq)]
-/// Wake values
-pub enum LP_WAKE_CTRL {
-    /// 1.25 Hz
-    _1P25 = 0,
-    /// 2.5 Hz
-    _2P5,
-    /// 5 Hz
-    _5,
-    /// 10 Hz
-    _10,
-}
+// #[allow(non_camel_case_types)]
+// #[derive(Copy, Clone, Debug, Eq, PartialEq)]
+// /// Wake values
+// pub enum LP_WAKE_CTRL {
+//     /// 1.25 Hz
+//     _1P25 = 0,
+//     /// 2.5 Hz
+//     _2P5,
+//     /// 5 Hz
+//     _5,
+//     /// 10 Hz
+//     _10,
+// }
 
-#[allow(non_camel_case_types)]
-#[derive(Copy, Clone, Debug, Eq, PartialEq)]
-/// Accelerometer High Pass Filter Values
-pub enum ACCEL_HPF {
-    /// Cut off frequency: None
-    _RESET = 0,
-    /// Cut off frequency: 5 Hz
-    _5 = 1,
-    /// Cut off frequency: 2.5 Hz
-    _2P5 = 2,
-    /// Cut off frequency: 1.25 Hz
-    _1P25 = 3,
-    /// Cut off frequency: 0.63 Hz
-    _0P63 = 4,
-    /// When triggered, the filter holds the present sample. The filter output will be the
-    /// difference between the input sample and the held sample
-    _HOLD = 7
-}
+// #[allow(non_camel_case_types)]
+// #[derive(Copy, Clone, Debug, Eq, PartialEq)]
+// /// Accelerometer High Pass Filter Values
+// pub enum ACCEL_HPF {
+//     /// Cut off frequency: None
+//     _RESET = 0,
+//     /// Cut off frequency: 5 Hz
+//     _5 = 1,
+//     /// Cut off frequency: 2.5 Hz
+//     _2P5 = 2,
+//     /// Cut off frequency: 1.25 Hz
+//     _1P25 = 3,
+//     /// Cut off frequency: 0.63 Hz
+//     _0P63 = 4,
+//     /// When triggered, the filter holds the present sample. The filter output will be the
+//     /// difference between the input sample and the held sample
+//     _HOLD = 7
+// }
 
-impl From<u8> for ACCEL_HPF {
-    fn from(range: u8) -> Self
-    {
-        match range {
-            0 => ACCEL_HPF::_RESET,
-            1 => ACCEL_HPF::_5,
-            2 => ACCEL_HPF::_2P5,
-            3 => ACCEL_HPF::_1P25,
-            4 => ACCEL_HPF::_0P63,
-            7 => ACCEL_HPF::_HOLD,
-            _ => ACCEL_HPF::_RESET,
-        }
-    }
-}
+// impl From<u8> for ACCEL_HPF {
+//     fn from(range: u8) -> Self
+//     {
+//         match range {
+//             0 => ACCEL_HPF::_RESET,
+//             1 => ACCEL_HPF::_5,
+//             2 => ACCEL_HPF::_2P5,
+//             3 => ACCEL_HPF::_1P25,
+//             4 => ACCEL_HPF::_0P63,
+//             7 => ACCEL_HPF::_HOLD,
+//             _ => ACCEL_HPF::_RESET,
+//         }
+//     }
+// }
 
 #[allow(non_camel_case_types)]
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]

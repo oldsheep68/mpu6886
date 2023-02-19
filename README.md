@@ -17,6 +17,12 @@ only small adaptions for mpu6886 were done:
 * Setting Accel/Gyro Ranges/Sensitivity
 * Setting Accel HPF/LPF
 
+removed:
+* MOT_DETECT_STATUS
+* MOT_DETECT_CONTROL
+* LP_WAKE_CTRL
+* ACCEL_HPF
+
 ## Basic usage 
 To use this driver you must provide a concrete `embedded_hal` implementation. Here's a 
 [`linux_embedded_hal`](https://github.com/rust-embedded/linux-embedded-hal) example

@@ -2,14 +2,14 @@ use mpu6886::{*, device::*};
 
 use linux_embedded_hal::{I2cdev, Delay};
 use i2cdev::linux::LinuxI2CError;
-use mpu6886::device::{ACCEL_HPF, CLKSEL};
+use mpu6886::device::{ CLKSEL};
 
-fn main() -> Result<(), mpu6886Error<LinuxI2CError>> {
+fn main() -> Result<(), Mpu6886Error<LinuxI2CError>> {
     let i2c = I2cdev::new("/dev/i2c-1")
-        .map_err(mpu6886Error::I2c)?;
+        .map_err(Mpu6886Error::I2c)?;
 
     let mut delay = Delay;
-    let mut mpu = mpu6886::new(i2c);
+    let mut mpu = Mpu6886::new(i2c);
     
     mpu.init(&mut delay)?;
 
@@ -28,19 +28,6 @@ fn main() -> Result<(), mpu6886Error<LinuxI2CError>> {
     mpu.set_accel_range(AccelRange::G4)?;
     assert_eq!(mpu.get_accel_range()?, AccelRange::G4);
 
-    // accel_hpf: per default RESET/no filter, see ACCEL_CONFIG
-    println!("Test accel hpf");
-    assert_eq!(mpu.get_accel_hpf()?, ACCEL_HPF::_RESET);
-    mpu.set_accel_hpf(ACCEL_HPF::_1P25)?;
-    assert_eq!(mpu.get_accel_hpf()?, ACCEL_HPF::_1P25);
-    mpu.set_accel_hpf(ACCEL_HPF::_2P5)?;
-    assert_eq!(mpu.get_accel_hpf()?, ACCEL_HPF::_2P5);
-    mpu.set_accel_hpf(ACCEL_HPF::_5)?;
-    assert_eq!(mpu.get_accel_hpf()?, ACCEL_HPF::_5);
-    mpu.set_accel_hpf(ACCEL_HPF::_0P63)?;
-    assert_eq!(mpu.get_accel_hpf()?, ACCEL_HPF::_0P63);
-    mpu.set_accel_hpf(ACCEL_HPF::_HOLD)?;
-    assert_eq!(mpu.get_accel_hpf()?, ACCEL_HPF::_HOLD);
 
     // test sleep. Default no, in wake()
     println!("Test sleep");
@@ -61,26 +48,25 @@ fn main() -> Result<(), mpu6886Error<LinuxI2CError>> {
 
     // Test clksel: GXAXIS per default, set in wake()
     println!("Test CLKSEL");
-    assert_eq!(mpu.get_clock_source()?, CLKSEL::GXAXIS);
-    mpu.set_clock_source(CLKSEL::GYAXIS)?;
-    assert_eq!(mpu.get_clock_source()?, CLKSEL::GYAXIS);
-    mpu.set_clock_source(CLKSEL::GZAXIS)?;
-    assert_eq!(mpu.get_clock_source()?, CLKSEL::GZAXIS);
+    assert_eq!(mpu.get_clock_source()?, CLKSEL::AUTOPLL1);
+    mpu.set_clock_source(CLKSEL::AUTOPLL2)?;
+    assert_eq!(mpu.get_clock_source()?, CLKSEL::AUTOPLL2);
+    mpu.set_clock_source(CLKSEL::AUTOPLL3)?;
+    assert_eq!(mpu.get_clock_source()?, CLKSEL::AUTOPLL3);
     mpu.set_clock_source(CLKSEL::OSCILL)?;
     assert_eq!(mpu.get_clock_source()?, CLKSEL::OSCILL);
     mpu.set_clock_source(CLKSEL::STOP)?;
     assert_eq!(mpu.get_clock_source()?, CLKSEL::STOP);
-    mpu.set_clock_source(CLKSEL::RESERV)?;
-    assert_eq!(mpu.get_clock_source()?, CLKSEL::RESERV);
-    mpu.set_clock_source(CLKSEL::EXT_19P2)?;
-    assert_eq!(mpu.get_clock_source()?, CLKSEL::EXT_19P2);
-    mpu.set_clock_source(CLKSEL::EXT_32p7)?;
-    assert_eq!(mpu.get_clock_source()?, CLKSEL::EXT_32p7);
+    mpu.set_clock_source(CLKSEL::AUTOPLL4)?;
+    assert_eq!(mpu.get_clock_source()?, CLKSEL::AUTOPLL4);
+    mpu.set_clock_source(CLKSEL::AUTOPLL5)?;
+    assert_eq!(mpu.get_clock_source()?, CLKSEL::AUTOPLL5);
+    mpu.set_clock_source(CLKSEL::OSCILL6)?;
+    assert_eq!(mpu.get_clock_source()?, CLKSEL::OSCILL6);
 
     // reset
     println!("Test reset");
     mpu.reset_device(&mut delay)?;
-    assert_eq!(mpu.get_accel_hpf()?, ACCEL_HPF::_RESET);
     assert_eq!(mpu.get_accel_range()?, AccelRange::G2);
     assert_eq!(mpu.get_gyro_range()?, GyroRange::D250);
     assert_eq!(mpu.get_sleep_enabled()?, true);

@@ -2,12 +2,12 @@ use mpu6886::*;
 use linux_embedded_hal::{I2cdev, Delay};
 use i2cdev::linux::LinuxI2CError;
 
-fn main() -> Result<(), mpu6886Error<LinuxI2CError>> {
+fn main() -> Result<(), Mpu6886Error<LinuxI2CError>> {
     let i2c = I2cdev::new("/dev/i2c-1")
-        .map_err(mpu6886Error::I2c)?;
+        .map_err(Mpu6886Error::I2c)?;
 
     let mut delay = Delay;
-    let mut mpu = mpu6886::new(i2c);
+    let mut mpu = Mpu6886::new(i2c);
     
     mpu.init(&mut delay)?;
 
