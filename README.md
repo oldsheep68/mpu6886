@@ -7,21 +7,24 @@ only small adaptions for mpu6886 were done:
 * temperature reading adapted
 * CLKSEL is redefined
 * IRQ STATUS redefined
-
-## What Works
-* Reading the accelerometer, gyroscope, temperature sensor
-    * raw
-    * scaled
-    * roll/pitch estimation
-* Motion Detection
-* Setting Accel/Gyro Ranges/Sensitivity
-* Setting Accel HPF/LPF
-
 removed:
 * MOT_DETECT_STATUS
 * MOT_DETECT_CONTROL
 * LP_WAKE_CTRL
 * ACCEL_HPF
+
+
+## What Works most probably now after changes from mpu6050 to mpu6886
+Not, almost no tests have been done yet.
+* Reading the accelerometer, gyroscope, temperature sensor
+    * raw
+    * scaled
+    * roll/pitch estimation
+* Setting Accel/Gyro Ranges/Sensitivity
+
+
+
+
 
 ## Basic usage 
 To use this driver you must provide a concrete `embedded_hal` implementation. Here's a 
