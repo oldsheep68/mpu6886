@@ -1,0 +1,23 @@
+[package]
+name = "mpu6886"
+version = "0.1.0"
+authors = ["Julian Gaal <gjulian@uos.de>"]
+edition = "2018"
+
+description = "Platform agnostic driver for mpu6886 6-axis IMU"
+repository = "https://github.com/juliangaal/mpu6886"
+readme = "README.md"
+keywords = ["mpu6886", "imu", "embedded"]
+license = "MIT"
+
+[dependencies]
+embedded-hal = "0.2.4"
+libm = "0.2.1"
+esp-println       = { version = "0.3.1", features = ["esp32"] }
+[dependencies.nalgebra]
+default-features = false
+version = "0.31.2"
+
+[dev-dependencies]
+i2cdev = "0.5.1"
+linux-embedded-hal = "0.3.2"
