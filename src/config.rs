@@ -83,3 +83,85 @@ impl TryFrom<u8> for AccelBw {
         }
     }
 }
+
+
+/// Accelareration Filter Bandwith selection values
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub enum GyroBw {
+    /// BW filter bypassed
+    Hz8173  = 0b01000,
+    /// BW filter bypassed
+    // Hz3182  = 0b10000,
+    /// 180 Hz
+    Hz250 = 0b00000,
+    /// 180 Hz
+    Hz176 = 0b00001,
+    /// 121 Hz
+    Hz92 = 0b00010,
+    /// 73 Hz
+    Hz41 = 0b00011,
+    /// 53 Hz
+    Hz20 = 0b00100,
+    /// 34 Hz
+    Hz10 = 0b00101,
+    /// 25 Hz
+    Hz5 = 0b00110,
+    /// 16 Hz
+    Hz3281 = 0b00111,
+}
+
+
+impl GyroBw {
+    pub fn as_f32(self) -> f32 {
+        use GyroBw::*;
+
+        match self {
+            Hz8173 => 8173.0, // filter is bypassed
+            // Hz3182 => 3182.0,
+            Hz250 => 250.0,
+            Hz176 => 176.0,
+            Hz92 => 92.0,
+            Hz41 => 41.0,
+            Hz20 => 20.0,
+            Hz10 => 10.0,
+            Hz5 => 5.0,
+            Hz3281 => 3281.0,
+        }
+    }
+}
+
+impl Default for GyroBw {
+    fn default() -> Self {
+        Self::Hz3281
+    }
+}
+
+impl Bitfield for GyroBw {
+    const BITMASK: u8 = 0b0001_1111;
+
+    fn bits(self) -> u8 {
+        // `A_DLPF_CFG` occupies bits 2:0 in the register
+        // ACCEL_FCHOICE_B  occupies bit 3
+        self as u8
+    }
+}
+
+impl TryFrom<u8> for GyroBw {
+    type Error = SensorError;
+
+    fn try_from(value: u8) -> Result<Self, Self::Error> {
+        use GyroBw::*;
+
+        match value {
+            0b10000 => Ok(Hz8173), // filter is bypassed
+            0b00000 => Ok(Hz250),
+            0b00010 => Ok(Hz92),
+            0b00011 => Ok(Hz41),
+            0b00100 => Ok(Hz20),
+            0b00101 => Ok(Hz10),
+            0b00110 => Ok(Hz5),
+            0b00111 => Ok(Hz3281),
+            _ => Err(SensorError::InvalidDiscriminant),
+        }
+    }
+}
