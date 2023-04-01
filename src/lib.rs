@@ -14,6 +14,7 @@
 //! use mpu6886::*;
 //! use linux_embedded_hal::{I2cdev, Delay};
 //! use i2cdev::linux::LinuxI2CError;
+//! 
 //!
 //! fn main() -> Result<(), mpu6886Error<LinuxI2CError>> {
 //!     let i2c = I2cdev::new("/dev/i2c-1")
@@ -48,8 +49,13 @@
 
 mod bits;
 pub mod device;
+pub mod config;
+pub mod error;
 
+use crate::config::*;
 use crate::device::*;
+use crate::error::*;
+
 use libm::{powf, atan2f, sqrtf};
 use nalgebra::{Vector3, Vector2};
 use embedded_hal::{
@@ -63,15 +69,15 @@ pub const PI: f32 = core::f32::consts::PI;
 /// PI / 180, for conversion to radians
 pub const PI_180: f32 = PI / 180.0;
 
-/// All possible errors in this crate
-#[derive(Debug)]
-pub enum Mpu6886Error<E> {
-    /// I2C bus error
-    I2c(E),
+// /// All possible errors in this crate
+// #[derive(Debug)]
+// pub enum Mpu6886Error<E> {
+//     /// I2C bus error
+//     I2c(E),
 
-    /// Invalid chip ID was read
-    InvalidChipId(u8),
-}
+//     /// Invalid chip ID was read
+//     InvalidChipId(u8),
+// }
 
 /// Handles all operations on/with mpu6886
 pub struct Mpu6886<I> {
@@ -306,6 +312,21 @@ where
             atan2f(acc.y, sqrtf(powf(acc.x, 2.) + powf(acc.z, 2.))),
             atan2f(-acc.x, sqrtf(powf(acc.y, 2.) + powf(acc.z, 2.)))
         ))
+    }
+
+    pub fn get_accel_bandwith(&mut self) -> Result<AccelBw, Mpu6886Error<E>> {
+        // `ACCEL_UI_FILT_BW` occupies bits 2:0 in the register
+        let bw_sel = self.read_bits(ACCEL_CONFIG_2::ADDR, 3, 4)?;
+        let bw = AccelBw::try_from(bw_sel)?;
+
+        Ok(bw)
+    }
+
+    pub fn set_accel_bw(&mut self, bw: AccelBw) -> Result<(), Mpu6886Error<E>> {
+        // TODO: modify register if DEC2_CFG needs to be set elsewhere
+        self.write_byte(ACCEL_CONFIG_2::ADDR, bw.bits())?;
+        
+        Ok(())
     }
 
     /// Converts 2 bytes number in 2 compliment

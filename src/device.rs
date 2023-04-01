@@ -160,6 +160,16 @@ impl ACCEL_CONFIG {
     pub const FS_SEL: BitBlock = BitBlock { bit: 4, length: 2};
 }
 
+pub struct ACCEL_CONFIG_2;
+impl ACCEL_CONFIG_2 {
+    /// Base Address
+    pub const ADDR: u8 = 0x1d;
+    pub const DEC2_CFG: BitBlock = BitBlock { bit: 5, length: 2 };
+    /// Bits for Accel Bandwidth configuration
+    pub const ACCEL_FCHOICE_B: u8 = 3;
+    pub const A_DLPF_CFG: BitBlock = BitBlock { bit: 2, length: 3 };
+}
+
 #[allow(non_camel_case_types)]
 #[derive(Copy, Clone, Debug)]
 /// Register 55: INT Pin / Bypass Enable Configuration
