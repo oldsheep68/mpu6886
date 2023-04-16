@@ -61,6 +61,20 @@ pub const DEFAULT_SLAVE_ADDR: u8 = 0x68;
 /// Internal register to check slave addr
 pub const WHOAMI: u8 = 0x75;
 
+/// User control: FIFO enable general and reset
+/// bit 0 reset signal path
+/// bit 2 reset fifo path
+/// bit 6 enable fifo    
+pub const USER_CTRL: u8 = 0x6a;
+/// FIFO enable of accel or gyro&temperature data separately
+/// bit 3 enables accel data write to fifo
+/// bit 4 enables gyro&temperature data write to fifo
+pub const FIFO_EN: u8 = 0x23;
+/// FIFO address to read data from
+pub const FIFO_R_W: u8 = 0x74;
+/// FIFO counter address of high byte register
+pub const FIFO_COUNTH: u8 = 0x72;
+
 /// Describes a bit block from bit number 'bit' to 'bit'+'length'
 pub struct BitBlock {
     pub bit: u8,

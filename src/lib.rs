@@ -68,6 +68,7 @@ pub const PI: f32 = core::f32::consts::PI;
 
 /// PI / 180, for conversion to radians
 pub const PI_180: f32 = PI / 180.0;
+pub const GRAVITY: f32 = 9.806651;
 
 // /// All possible errors in this crate
 // #[derive(Debug)]
@@ -324,7 +325,25 @@ where
 
     pub fn set_accel_bw(&mut self, bw: AccelBw) -> Result<(), Mpu6886Error<E>> {
         // TODO: modify register if DEC2_CFG needs to be set elsewhere
-        self.write_byte(ACCEL_CONFIG_2::ADDR, bw.bits())?;
+
+        self.write_byte(CONFIG::ADDR, bw.bits())?;
+        self.write_byte(GYRO_CONFIG::ADDR, bw.bits())?;
+        
+        Ok(())
+    }
+
+    pub fn get_gyro_bandwith(&mut self) -> Result<GyroBw, Mpu6886Error<E>> {
+        // `DLPF_CFG` occupies bits 2:0 in the register of CONFIGURATION
+        let bw_sel = self.read_bits(CONFIG::ADDR, 2, 3)?;
+        let fchoice_b = self.read_bits(GYRO_CONFIG::ADDR, 1, 2)?;
+        let bw = GyroBw::try_from(bw_sel | (fchoice_b << 3))?;
+
+        Ok(bw)
+    }
+
+    pub fn set_gyro_bw(&mut self, bw: GyroBw) -> Result<(), Mpu6886Error<E>> {
+        // TODO: modify register if DEC2_CFG needs to be set elsewhere
+        //self.write_byte(ACCEL_CONFIG_2::ADDR, bw.bits())?;
         
         Ok(())
     }
@@ -342,6 +361,8 @@ where
 
         word
     }
+
+
 
     /// Reads rotation (gyro/acc) from specified register
     fn read_rot(&mut self, reg: u8) -> Result<Vector3<f32>, Mpu6886Error<E>> {
@@ -378,8 +399,65 @@ where
         self.read_bytes(TEMP_OUT_H, &mut buf)?;
         let raw_temp = self.read_word_2c(&buf[0..2]) as f32;
 
+        // let high: u16 = buf[0] as u16;
+        // let low: u16 = buf[1] as u16;
+        // let word = high << 8 | low;
+        // let raw_temp = word as f32;
+
         // According to revision 4.2
         Ok((raw_temp / TEMP_SENSITIVITY) + TEMP_OFFSET)
+    }
+
+    /// enable writing data to the fifo output, this function must be called before
+    /// reading with read_fifo()
+    /// currently only enabling all data gyro and accel is supported by the fifo-read()
+    /// enabling gyro will also enabel temperature
+    pub fn enable_fifo(&mut self, accel: bool, gyro: bool) -> Result<(), Mpu6886Error<E>> {
+        self.write_bit(FIFO_EN, 3, accel)?;
+        self.write_bit(FIFO_EN, 4, gyro)?;
+        self.write_bit(USER_CTRL, 0, true)?;  // reset signal path
+        self.write_bit(USER_CTRL, 2, true)?; // reset fifo path
+        self.write_bit(USER_CTRL, 6, true)?; // enable fifo
+        Ok(())
+    }
+
+    /// Read sensor data from FIFO in one go
+    /// currently only enabling all data gyro and accel is supported by the fifo-read()
+    /// Vector_0 contains accelerometer data in g 
+    /// Vector_1 contains gyro data in °/sec
+    /// Vector_2 contains temperature in first position rest 0
+    #[inline(always)]
+    pub fn read_fifo(&mut self)  -> Result<Vector3<Vector3<f32>>, Mpu6886Error<E>> {
+        let mut buf: [u8; 14] = [0; 14];
+        self.read_bytes(FIFO_R_W, &mut buf)?;
+        if buf[0] != 255 {
+            let ax = (self.read_word_2c(&buf[0..2]) as f32)/self.acc_sensitivity;
+            let ay = (self.read_word_2c(&buf[2..4]) as f32)/self.acc_sensitivity;
+            let az = (self.read_word_2c(&buf[4..6]) as f32)/self.acc_sensitivity;
+            let t = (self.read_word_2c(&buf[6..8]) as f32/TEMP_SENSITIVITY) + TEMP_OFFSET;
+            let gx = (self.read_word_2c(&buf[8..10]) as f32) / self.gyro_sensitivity;
+            let gy = (self.read_word_2c(&buf[10..12]) as f32) / self.gyro_sensitivity;
+            let gz = (self.read_word_2c(&buf[12..14]) as f32) / self.gyro_sensitivity;
+
+            Ok(Vector3::<Vector3<f32>>::new(
+                Vector3::new(ax,ay,az),
+                Vector3::new(gx,gy,gz),
+                Vector3::new(t,0.0,0.0),
+            ))
+        } else {
+            Err(Mpu6886Error::SensorError(SensorError::NofFifoData))
+        }
+    }
+
+    pub fn read_fifo_si(&mut self) -> Result<Vector3<Vector3<f32>>, Mpu6886Error<E>> {
+        let mut data = self.read_fifo()?;
+        data[0][0] = data[0][0] * GRAVITY;
+        data[0][1] = data[0][1] * GRAVITY;
+        data[0][2] = data[0][2] * GRAVITY;
+        data[1][0] = data[1][0] * PI_180;
+        data[1][1] = data[1][1] * PI_180;
+        data[1][2] = data[1][2] * PI_180;
+        Ok(data)
     }
 
     /// Writes byte to register

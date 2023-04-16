@@ -39,6 +39,8 @@ pub enum SensorError {
     /// Attempted to create an AccelRange or GyroRange enum from an invalid
     /// discriminant
     InvalidDiscriminant,
+    /// no fifo data available
+    NofFifoData,
 }
 
 // impl<E> From<SensorError> for Error<E> {
